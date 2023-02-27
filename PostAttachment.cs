@@ -14,8 +14,10 @@ using System.Web;
 
 namespace CronSynchroJiraAzure
 {
-    public class Attachments
+    public class PostAttachment
     {
+        public PostAttachment() { }
+
         public string PostAttachmentToAzureServer(string attachment, string project)
         {
             var filename = attachment.Split('/').Last();

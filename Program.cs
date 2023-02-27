@@ -392,7 +392,7 @@ namespace CronSynchroJiraAzure
         {
             foreach( var att in attachments)
             {
-                Attachments pj = new Attachments();
+                PostAttachment pj = new PostAttachment();
                 var azure_link = pj.PostAttachmentToAzureServer(att, project);
                 var patchAtt = new PatchToAzure();
                 patchAtt.url = $"https://dev.azure.com/IRIUMSOFTWARE/{project}/_apis/wit/workitems/{azureID}?api-version=7.0";
