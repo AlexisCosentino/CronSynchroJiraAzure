@@ -61,6 +61,7 @@ Fonction qui permet de gérer les tickets Jira dont le status est modifié en "A
     * Si non, 
         * Faire un post d'un nouveau ticket avec modification de sont status et ajout de "To estimate à True.
         * Ensuite j'insert into jira sql le lien du ticket azure dans le champs "linkToAzure".
+        * Puis je requete les PJ et appel la fonction qui les post sur le PBI
     * Si oui,
         * Je fait un patch de celui ci avec un changement d'état et changement de to estimate en True.
     
@@ -72,6 +73,7 @@ Fonction qui permet de gérer les tickets jira dont le statut est modifié en "a
     * Si non, 
         * Faire un post d'un nouveau ticket avec modification de sont status en "New".
         * Appel de la fonction qui ajoute le dernier commentaire.
+        * Requete des PJ et ensuite appel de la fonction qui les post sur celui ci.
         * Ensuite j'insert into jira sql le lien du ticket azure dans le champs "linkToAzure".
     * Si oui,
         * Je fait un patch de celui ci avec un changement d'état.
@@ -79,9 +81,9 @@ Fonction qui permet de gérer les tickets jira dont le statut est modifié en "a
     
 ## SyncJira_KO()
 Fonction qui permet de gérer les tickets jira dont le statut est modifié en "Test KO" et calcul combien de temps entre le changement d'état pour savoir si le chef de projet à gérer son ticket dans les temps ou pas.
-* Appel de la query sql et récupération d'une liste de JiraEntity contenant tout les tickets
+* Appel de la query sql et récupération d'une liste de JiraEntity contenant tout les tickets KO depuis moins de 1h.
 * Pour chaque ticket dans la liste
-* Je calcul via une requete SQL le nombre de jour entre la modification d'etat vers "Test KO"
+* Je calcul via une requete SQL le nombre de jour entre la modification d'etat de "Done" vers "Test KO"
     * Si nombre de jour <= 15 :
         * si le ticket existe sur Azure :
             * Patch de ce ticket avec changement d'état vers "Back - Test Failed"
@@ -127,6 +129,7 @@ Cette fonction sert à automatiser une/des actions sur une tache lors d'une clot
 * Je recupère les itérations du projet,
 * Je récupère l'ID de l'itération passé la plus récente.
 (Ceci est le seul moyen de récupérer le dernier sprint passé)
+* Je GET la liste de PBI de cette itération.
 * Pour chaque PBI de l'itération :
     * Je get le PBI en question,
     * Si ce PBI est une tache, Statut != Done && statut != Closed Sprint
@@ -139,4 +142,4 @@ Cette fonction sert à automatiser une/des actions sur une tache lors d'une clot
 * Ajout de commentaire de Azure -> Jira PAS FAIT, ne sait pas comment faire proprement.
 * Ajout de PJ Azure -> Jira PAS FAIT, ne sait pas comment faire du tout.
 * Vérifier le temps dans chaque query
-* Pour que l'app fonctionne, vous devez absolument avoir un fichier json contenant les mots de passe et login nécessaires, merci de me demander si vous en avez besoin.
+* Pour que l'app fonctionne, vous devez absolument avoir un fichier json contenant les mots de passe et login nécessaires, dans le dossier bin/DEBUG/, merci de me demander si vous en avez besoin.

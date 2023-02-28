@@ -42,13 +42,12 @@ namespace CronSynchroJiraAzure
         public Task Execute(IJobExecutionContext context)
         {
             SyncJiraToAzure_Validate();
-            //SyncJiraToAzure_Accepted();
-            //SyncJira_KO();
-            //SyncAzure_Done();
-            //SyncAzure_Removed();
-            //SyncAzure_Sprint();
-            //SyncAzure_ClosedSprint();
-            Console.WriteLine("ouf ca marche frere");
+            SyncJiraToAzure_Accepted();
+            SyncJira_KO();
+            SyncAzure_Done();
+            SyncAzure_Removed();
+            SyncAzure_Sprint();
+            SyncAzure_ClosedSprint();
             return Task.CompletedTask;
         }
 
@@ -76,10 +75,6 @@ namespace CronSynchroJiraAzure
                     //Send attachment to Azure
                     sql = new GetSQL($"SELECT id ,mimetype, filename FROM fileattachment Where issueid = {ticket.issueNb};");
                     List<string> attachments = sql.getAttachments();
-                    Console.WriteLine(attachments.GetType());
-                    Console.WriteLine(ticket.azureProject.GetType());
-                    Console.WriteLine(result.id.GetType());
-
                     try
                     {
                         patchPBIWithAttachmentFromJira(attachments, ticket.azureProject, result.id.ToString());
@@ -339,7 +334,7 @@ namespace CronSynchroJiraAzure
 
                                 //Patch
                                 var patch = new PatchToAzure();
-                                patch.url = $"https://dev.azure.com/IRIUMSOFTWARE/{project}/_apis/wit/workitems/{newResult.id}?api-version=7.0";
+                                patch.url = $"https://dev.azure.com/IRIUMSOFTWARE/{project}/_apis/wit/workitems/{result.id}?api-version=7.0";
                                 patch.json = "[{\"op\": \"add\", \"path\": \"/fields/System.State\", \"value\": \"Closed Sprint\" }]";
                                 patch.patchingToAzure();
 
@@ -348,16 +343,17 @@ namespace CronSynchroJiraAzure
                                 result = get.GettingFromAzure();
                                 foreach (var relation in result.relations)
                                 {
+                                    patch.url = $"https://dev.azure.com/IRIUMSOFTWARE/{project}/_apis/wit/workitems/{newResult.id}?api-version=7.0";
                                     patch.json = "[{\"op\": \"add\", \"path\": \"/relations/-\", \"value\": {\"rel\": \""+ relation.rel +"\",  \"url\": \" " + relation.url +" \"}}]";
                                     patch.patchingToAzure();
                                 }
 
                                 //Get comment and duplicate to new post
                                 var getAndPostCom = new GetAndPostComments();
-                                getAndPostCom.getAndPostCommentFromAzureToAzure(result.id, project, newResult.id);
+                                getAndPostCom.getAndPostCommentFromAzureToAzure(result.id.ToString(), project, newResult.id.ToString());
 
                                 //Get attachment and duplicate to new post
-                                patchPBIWithAttachmentFromAzure(project, result.id, newResult.id);
+                                patchPBIWithAttachmentFromAzure(project, result.id.ToString(), newResult.id.ToString());
                             }
                         }
                     }
