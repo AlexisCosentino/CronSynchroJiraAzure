@@ -56,7 +56,7 @@ namespace CronSynchroJiraAzure
                 {
                     var post = new PostToAzure();
                     post.url = $"https://dev.azure.com/IRIUMSOFTWARE/{project}/_apis/wit/workItems/{azureIDtoPost}/comments?api-version=7.0-preview.3";
-                    post.json = createJsonWithCommentToPost(c);
+                    post.json = createJsonWithCommentToPost(new Comment(c.text, c.createdBy.uniqueName, c.CreatedDate));
                     post.postingToAzure();
                 }
             }

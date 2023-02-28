@@ -137,5 +137,6 @@ Cette fonction sert à automatiser une/des actions sur une tache lors d'une clot
 
 # Informations
 * Ajout de commentaire de Azure -> Jira PAS FAIT, ne sait pas comment faire proprement.
-* Ajour de PJ Azure -> Jira PAS FAIT, ne sait pas comment faire du tout.
+* Ajout de PJ Azure -> Jira PAS FAIT, ne sait pas comment faire du tout.
 * Vérifier le temps dans chaque query
+* Pour que l'app fonctionne, vous devez absolument avoir un fichier json contenant les mots de passe et login nécessaires, merci de me demander si vous en avez besoin.

@@ -76,12 +76,16 @@ namespace CronSynchroJiraAzure
                     //Send attachment to Azure
                     sql = new GetSQL($"SELECT id ,mimetype, filename FROM fileattachment Where issueid = {ticket.issueNb};");
                     List<string> attachments = sql.getAttachments();
+                    Console.WriteLine(attachments.GetType());
+                    Console.WriteLine(ticket.azureProject.GetType());
+                    Console.WriteLine(result.id.GetType());
+
                     try
                     {
-                        patchPBIWithAttachmentFromJira(attachments, ticket.azureProject, result.id);
-                    } catch
+                        patchPBIWithAttachmentFromJira(attachments, ticket.azureProject, result.id.ToString());
+                    } catch (Exception ex)
                     {
-
+                        Console.WriteLine("Une erreur est survenue : {0}", ex.Message);
                     }
 
                 } else
@@ -123,9 +127,11 @@ namespace CronSynchroJiraAzure
                     List<string> attachments = sql.getAttachments();
                     try
                     {
-                        patchPBIWithAttachmentFromJira(attachments, ticket.azureProject, result.id);
-                    } catch {
-
+                        patchPBIWithAttachmentFromJira(attachments, ticket.azureProject, result.id.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Une erreur est survenue : {0}", ex.Message);
                     }
                     //Add link azure link to jira
                     var update = new UpdateSQL($"INSERT INTO customfieldvalue (id, issue, CUSTOMFIELD, stringvalue) SELECT MAX(ID)+1, {ticket.issueNb}, 11900, 'https://dev.azure.com/IRIUMSOFTWARE/_workitems/edit/{result.id}' FROM Jira_Prod.dbo.customfieldvalue;");
@@ -393,6 +399,7 @@ namespace CronSynchroJiraAzure
             foreach( var att in attachments)
             {
                 PostAttachment pj = new PostAttachment();
+
                 var azure_link = pj.PostAttachmentToAzureServer(att, project);
                 var patchAtt = new PatchToAzure();
                 patchAtt.url = $"https://dev.azure.com/IRIUMSOFTWARE/{project}/_apis/wit/workitems/{azureID}?api-version=7.0";
