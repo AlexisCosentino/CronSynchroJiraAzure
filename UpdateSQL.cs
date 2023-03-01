@@ -37,6 +37,43 @@ namespace CronSynchroJiraAzure
             }
         }
 
+        public string getJiraID()
+        {
+            string jiraID = "";
+            get_credentials();
+            SqlConnection conn = new SqlConnection($"Server={hostname};Database={dbname};User Id={username};Password={password};");
+            try
+            {
+                SqlCommand command = new SqlCommand(this.query, conn);
+                conn.Open();
+                SqlDataReader reader = command.ExecuteReader();
+                try
+                {
+                    while (reader.Read())
+                    {
+                        jiraID = reader[0].ToString();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+                finally
+                {
+                    reader.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return jiraID;
+        }
+
         private void get_credentials()
         {
             JObject data = JObject.Parse(File.ReadAllText("data.json"));

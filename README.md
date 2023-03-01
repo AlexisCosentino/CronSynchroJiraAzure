@@ -51,6 +51,8 @@ Le main appel un job qui est un Cron, qui est lancé actuellement toutes les min
 * Sur Jira, un champs AzureLink existe et doit etre remplis pour qu'il existe.
 * Sur Azure, un champ LinkToJira existe et doit être remplis pour qu'il existe.
 
+Le package Nugget NLog est utilisé afin d'écrire les logs sur un fichier externe, qui se trouve actuellement à la racine du projet : bin/DEBUG/SyncLogFile.log
+
 Chaque énoncé ci-dessus à sa propre fonction que je vais vous expliquer.
 
 ## SyncJiraToAzure_Validate()
@@ -97,10 +99,14 @@ Fonction qui permet de récupérer les PBI azures dont le statut est devenu "DON
 * Pour chaque pbi :
     * je le get via azure API
     * J'update le ticket sur JIRA avec le changement de statut vers "A compléter".
+    * Je récupère l'ID jira de l'issue afin d'ajouter le dernier commentaire azure sur Jira.
+
 * Je fais un nouveau post avec une nouvelle query pour recupérer une liste de pbi dont tout pareil mais estimate = false.
 * Pour chaque pbi :
     * Je le GET via azure API
     * J'update le ticket Jira avec le changement de statut ver "A tester".
+    * Je récupère l'ID jira de l'issue afin d'ajouter le dernier commentaire azure sur Jira.
+
 
 ## SyncAzure_Removed()
 Fonction qui permet de recupérer les pbi dont le statut à changé dans la journée vers "REMOVED"
@@ -108,6 +114,7 @@ Fonction qui permet de recupérer les pbi dont le statut à changé dans la jour
 * pour chaque pbi:
     * je les get via azure API
     * J'update le ticket JIRA en SQL avec le changement de statut.
+    * Je récupère l'ID jira de l'issue afin d'ajouter le dernier commentaire azure sur Jira.
 
 ## SyncAzure_Sprint()
 Fonction qui permet de modifier sur jira la date de début et la date de fin d'un ticket lorsque le PBI est affecté à un sprint sur Azure.
@@ -139,7 +146,5 @@ Cette fonction sert à automatiser une/des actions sur une tache lors d'une clot
         * Je get les commentaires et les post sur le nouveau
 
 # Informations
-* Ajout de commentaire de Azure -> Jira PAS FAIT, ne sait pas comment faire proprement.
 * Ajout de PJ Azure -> Jira PAS FAIT, ne sait pas comment faire du tout.
-* Vérifier le temps dans chaque query
 * Pour que l'app fonctionne, vous devez absolument avoir un fichier json contenant les mots de passe et login nécessaires, dans le dossier bin/DEBUG/, merci de me demander si vous en avez besoin.

@@ -14,6 +14,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.CSharp.RuntimeBinder;
 using System.Net.Mail;
+using Newtonsoft.Json;
+using System.Threading;
+using System.CodeDom;
+using System.Security.Cryptography;
+using System.Net;
+using System.Text;
+using NLog;
+
 
 namespace CronSynchroJiraAzure
 {
@@ -22,12 +30,13 @@ namespace CronSynchroJiraAzure
         static void Main(string[] args)
         {
             IScheduler scheduler = StdSchedulerFactory.GetDefaultScheduler().Result;
+
             scheduler.Start();
 
             IJobDetail job = JobBuilder.Create<ExecuteJob>().Build();
             ITrigger trigger = TriggerBuilder.Create()
                 .WithSimpleSchedule(x => x
-                    .WithIntervalInMinutes(1)
+                    .WithIntervalInHours(1)
                     .RepeatForever())
                 .Build();
             scheduler.ScheduleJob(job, trigger);
@@ -39,18 +48,30 @@ namespace CronSynchroJiraAzure
 
     public class ExecuteJob : IJob
     {
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public Task Execute(IJobExecutionContext context)
         {
-            SyncJiraToAzure_Validate();
-            SyncJiraToAzure_Accepted();
-            SyncJira_KO();
-            SyncAzure_Done();
-            SyncAzure_Removed();
-            SyncAzure_Sprint();
-            SyncAzure_ClosedSprint();
+            NLog.LogManager.Setup().LoadConfiguration(builder => {
+                builder.ForLogger().FilterMinLevel(LogLevel.Info).WriteToConsole();
+                builder.ForLogger().FilterMinLevel(LogLevel.Debug).WriteToFile(fileName: "alexis_test_log.txt");
+            });
+            Logger.Info("Mon premier message de journalisation");
+            Logger.Warn("Attention !");
+            Logger.Debug("Should be written in a file !");
+
+            //Testing_SyncAzure_Sprint();
+            //SyncJiraToAzure_Validate();
+            //SyncJiraToAzure_Accepted();
+            //SyncJira_KO();
+            //SyncAzure_Done();
+            //SyncAzure_Removed();
+            //SyncAzure_Sprint();
+            //SyncAzure_ClosedSprint();
             return Task.CompletedTask;
         }
 
+
+        //TESTED AND WORKS JUST FINE
         public void SyncJiraToAzure_Validate()
         {
             var sql = new GetSQL("SELECT jiraissue.id, project, reporter = (select  lower_user_name from app_user where jiraissue.reporter=user_key), assignee = (select lower_user_name from app_user where jiraissue.assignee=user_key), creator = (select lower_user_name from app_user where jiraissue.creator=user_key), summary, jiraissue.description, created, updated, duedate, project.pname, issuetype.pname as type_of_issue, issuestatus.pname as status_of_issue, priority.pname as priority, issuestatus,componentName = (select STRING_AGG( ISNULL(component.cname, ''), ';') from component inner join nodeassociation on nodeassociation.ASSOCIATION_TYPE = 'IssueComponent' where nodeassociation.sink_node_id = component.id and jiraissue.id = nodeassociation.SOURCE_NODE_ID and jiraissue.id = jiraissue.id), fixedVersion = (select STRING_AGG( ISNULL(projectversion.vname, ''), ';') from projectversion inner join nodeassociation on nodeassociation.ASSOCIATION_TYPE = 'IssueFixVersion' where nodeassociation.sink_node_id = projectversion.id and jiraissue.id = nodeassociation.SOURCE_NODE_ID and jiraissue.id = jiraissue.id), labels =  (select STRING_AGG( ISNULL(label.label, ''), ',') from label where label.issue = jiraissue.id), sprint_name = (select STRING_AGG( ISNULL(s.name, ''), ',') FROM customfieldvalue cfv INNER JOIN AO_60DB71_SPRINT s ON CAST(s.ID AS VARCHAR(10)) = CAST(cfv.stringvalue AS VARCHAR(10)) INNER JOIN jiraissue i ON i.id = cfv.issue where i.ID = jiraissue.ID), start_date = (select customfieldvalue.DATEVALUE from customfieldvalue where customfieldvalue.issue = jiraissue.id and CUSTOMFIELD = 10303), end_date = (select customfieldvalue.DATEVALUE from customfieldvalue where customfieldvalue.issue = jiraissue.id and CUSTOMFIELD = 10304), worklog = (select STRING_AGG(ISNULL(convert(nvarchar(max), CONCAT('Le ',STARTDATE,', ', author, ' a travaillé ', cast((timeworked/60)/60 as decimal(9,2)), 'h.')), ''), ';') from worklog where worklog.issueid = jiraissue.id), total_work_time = (select cast(sum((timeworked/60)/60) as decimal(9,2)) from worklog where worklog.issueid = jiraissue.id), jira_link = CONCAT(project.pkey, '-', jiraissue.issuenum), worklog2 = (select STRING_AGG(convert(nvarchar(max), ISNULL(CONCAT(CONVERT(VARCHAR, STARTDATE, 20), '~', author, '~', timeworked), ';')), ';') from worklog inner join cwd_user on user_name= AUTHOR where worklog.issueid = jiraissue.id), projectCategory = (select pc.cname from projectcategory pc left join nodeassociation na on project.id=na.source_node_id and na.sink_node_entity='ProjectCategory' where na.sink_node_id = pc.id), service = (select cfo.customvalue from customfieldoption cfo join customfield cf on cf.ID = 11100 inner join customfieldvalue cfv on cfv.STRINGVALUE = CAST(cfo.id AS NVARCHAR) and cfv.issue = jiraissue.id where cfo.customfield = 11100), jiraissue.TIMEORIGINALESTIMATE,  issue_linked_child = (select STRING_AGG( ISNULL(CONCAT(p.pkey, '-', j.issuenum), ''), ';') from jiraissue j , project p inner join  issuelink on DESTINATION = jiraissue.id where j.id = SOURCE and p.id = j.PROJECT), issue_linked_parent = (select STRING_AGG( ISNULL(CONCAT(p.pkey, '-', j.issuenum), ''), ';') from jiraissue j , project p inner join  issuelink on SOURCE = jiraissue.id where j.id = DESTINATION and p.id = j.PROJECT), azure_link = (select customfieldvalue.STRINGVALUE from customfieldvalue where customfieldvalue.issue = jiraissue.id and CUSTOMFIELD = 11900) FROM jiraissue, project, issuetype, issuestatus, priority WHERE jiraissue.priority=priority.ID and issuestatus.ID=jiraissue.issuestatus and issuetype.id=jiraissue.issuetype and project.id=jiraissue.project and issuetype != 10800 and not (project.id = 10000 or project.id= 13301) and  jiraissue.updated > DATEADD(day, -1, GETDATE()) and jiraissue.issuestatus = 10003 order by UPDATED desc;");
@@ -95,6 +116,8 @@ namespace CronSynchroJiraAzure
             }
         }
 
+
+        //TESTED AND WORKS JUST FINE
         public void SyncJiraToAzure_Accepted()
         {
             var sql = new GetSQL("SELECT jiraissue.id, project, reporter = (select  lower_user_name from app_user where jiraissue.reporter=user_key), assignee = (select lower_user_name from app_user where jiraissue.assignee=user_key), creator = (select lower_user_name from app_user where jiraissue.creator=user_key), summary, jiraissue.description, created, updated, duedate, project.pname, issuetype.pname as type_of_issue, issuestatus.pname as status_of_issue, priority.pname as priority, issuestatus,componentName = (select STRING_AGG( ISNULL(component.cname, ''), ';') from component inner join nodeassociation on nodeassociation.ASSOCIATION_TYPE = 'IssueComponent' where nodeassociation.sink_node_id = component.id and jiraissue.id = nodeassociation.SOURCE_NODE_ID and jiraissue.id = jiraissue.id), fixedVersion = (select STRING_AGG( ISNULL(projectversion.vname, ''), ';') from projectversion inner join nodeassociation on nodeassociation.ASSOCIATION_TYPE = 'IssueFixVersion' where nodeassociation.sink_node_id = projectversion.id and jiraissue.id = nodeassociation.SOURCE_NODE_ID and jiraissue.id = jiraissue.id), labels =  (select STRING_AGG( ISNULL(label.label, ''), ',') from label where label.issue = jiraissue.id), sprint_name = (select STRING_AGG( ISNULL(s.name, ''), ',') FROM customfieldvalue cfv INNER JOIN AO_60DB71_SPRINT s ON CAST(s.ID AS VARCHAR(10)) = CAST(cfv.stringvalue AS VARCHAR(10)) INNER JOIN jiraissue i ON i.id = cfv.issue where i.ID = jiraissue.ID), start_date = (select customfieldvalue.DATEVALUE from customfieldvalue where customfieldvalue.issue = jiraissue.id and CUSTOMFIELD = 10303), end_date = (select customfieldvalue.DATEVALUE from customfieldvalue where customfieldvalue.issue = jiraissue.id and CUSTOMFIELD = 10304), worklog = (select STRING_AGG(ISNULL(convert(nvarchar(max), CONCAT('Le ',STARTDATE,', ', author, ' a travaillé ', cast((timeworked/60)/60 as decimal(9,2)), 'h.')), ''), ';') from worklog where worklog.issueid = jiraissue.id), total_work_time = (select cast(sum((timeworked/60)/60) as decimal(9,2)) from worklog where worklog.issueid = jiraissue.id), jira_link = CONCAT(project.pkey, '-', jiraissue.issuenum), worklog2 = (select STRING_AGG(convert(nvarchar(max), ISNULL(CONCAT(CONVERT(VARCHAR, STARTDATE, 20), '~', author, '~', timeworked), ';')), ';') from worklog inner join cwd_user on user_name= AUTHOR where worklog.issueid = jiraissue.id), projectCategory = (select pc.cname from projectcategory pc left join nodeassociation na on project.id=na.source_node_id and na.sink_node_entity='ProjectCategory' where na.sink_node_id = pc.id), service = (select cfo.customvalue from customfieldoption cfo join customfield cf on cf.ID = 11100 inner join customfieldvalue cfv on cfv.STRINGVALUE = CAST(cfo.id AS NVARCHAR) and cfv.issue = jiraissue.id where cfo.customfield = 11100), jiraissue.TIMEORIGINALESTIMATE,  issue_linked_child = (select STRING_AGG( ISNULL(CONCAT(p.pkey, '-', j.issuenum), ''), ';') from jiraissue j , project p inner join  issuelink on DESTINATION = jiraissue.id where j.id = SOURCE and p.id = j.PROJECT), issue_linked_parent = (select STRING_AGG( ISNULL(CONCAT(p.pkey, '-', j.issuenum), ''), ';') from jiraissue j , project p inner join  issuelink on SOURCE = jiraissue.id where j.id = DESTINATION and p.id = j.PROJECT), azure_link = (select customfieldvalue.STRINGVALUE from customfieldvalue where customfieldvalue.issue = jiraissue.id and CUSTOMFIELD = 11900) FROM jiraissue, project, issuetype, issuestatus, priority WHERE jiraissue.priority=priority.ID and issuestatus.ID=jiraissue.issuestatus and issuetype.id=jiraissue.issuetype and project.id=jiraissue.project and issuetype != 10800 and not (project.id = 10000 or project.id= 13301) and jiraissue.updated > DATEADD(day, -1, GETDATE()) and jiraissue.issuestatus = 10000 order by UPDATED desc;");
@@ -113,9 +136,8 @@ namespace CronSynchroJiraAzure
                     posting.url = $"https://dev.azure.com/IRIUMSOFTWARE/{ticket.azureProject}/_apis/wit/workitems/${ticket.issueType}?bypassRules=true&api-version=6.0";
                     posting.json = jsonBody;
                     var result = posting.postingToAzure();
-
                     // Post last comment
-                    GetLastCommentAndPostToAzure(ticket, result.id);
+                    GetLastCommentAndPostToAzure(ticket, result.id.ToString());
 
                     //Send attachment to Azure
                     sql = new GetSQL($"SELECT id ,mimetype, filename FROM fileattachment Where issueid = {ticket.issueNb};");
@@ -131,7 +153,8 @@ namespace CronSynchroJiraAzure
                     //Add link azure link to jira
                     var update = new UpdateSQL($"INSERT INTO customfieldvalue (id, issue, CUSTOMFIELD, stringvalue) SELECT MAX(ID)+1, {ticket.issueNb}, 11900, 'https://dev.azure.com/IRIUMSOFTWARE/_workitems/edit/{result.id}' FROM Jira_Prod.dbo.customfieldvalue;");
                     update.UpdateRow();
-                } else
+                }
+                else
                 {
                     // Faire un Patch
                     string azureID = ticket.azureLink.Split('/').Last();
@@ -145,6 +168,7 @@ namespace CronSynchroJiraAzure
         }
 
 
+        //TESTED AND WORKS JUST FINE
         public void SyncJira_KO()
         {
             // Obtenir les ticket dont status KO depuis moins de 1h
@@ -187,13 +211,19 @@ namespace CronSynchroJiraAzure
             // Je récupère les PBI dont estimate TRUE, status DONE, JiraLink présent, dont le status à changé dans la journée.
             post.json = "{\"query\": \"SELECT [System.Id] FROM WorkItems WHERE [Custom.Toestimate] = 'true' AND [System.State] = 'Done' AND [Microsoft.VSTS.Common.StateChangeDate] >= @today AND [Custom.jiraLink] != '' \"}";
             var result = post.postingToAzure();
-            foreach( dynamic item in result.workItems)
+            foreach (dynamic item in result.workItems)
             {
                 var get = new GetAzure();
                 get.url = item.url;
                 var pbi = get.GettingFromAzure();
                 var sql = new UpdateSQL($"UPDATE jiraissue SET issuestatus = 10001 WHERE jiraissue.id= (Select jiraissue.id from jiraissue inner join customfieldvalue cfv on cfv.customfield = 11900 and STRINGVALUE = 'https://dev.azure.com/IRIUMSOFTWARE/_workitems/edit/{pbi.id}' and cfv.ISSUE = jiraissue.id);");
                 sql.UpdateRow();
+
+                //Add last comment
+                sql.query = $"select issue from customfieldvalue where CUSTOMFIELD = 11900 and stringvalue like '%/{pbi.id.ToString()}';";
+                string jiraID = sql.getJiraID();
+                var addLastComment = new GetAndPostComments();
+                addLastComment.getAndPostLastCommentFromAzureToJira(pbi.id.ToString(), pbi.fields["System.TeamProject"].ToString(), jiraID);
             }
 
             // Je récupère les PBI dont estimate FALSE, status DONE, JiraLink présent, dont le status à changé dans la journée.
@@ -206,6 +236,12 @@ namespace CronSynchroJiraAzure
                 var pbi = get.GettingFromAzure();
                 var sql = new UpdateSQL($"UPDATE jiraissue SET issuestatus = 10002 WHERE jiraissue.id= (Select jiraissue.id from jiraissue inner join customfieldvalue cfv on cfv.customfield = 11900 and STRINGVALUE = 'https://dev.azure.com/IRIUMSOFTWARE/_workitems/edit/{pbi.id}' and cfv.ISSUE = jiraissue.id);");
                 sql.UpdateRow();
+
+                //Add last comment
+                sql.query = $"select issue from customfieldvalue where CUSTOMFIELD = 11900 and stringvalue like '%/{pbi.id.ToString()}';";
+                string jiraID = sql.getJiraID();
+                var addLastComment = new GetAndPostComments();
+                addLastComment.getAndPostLastCommentFromAzureToJira(pbi.id.ToString(), pbi.fields["System.TeamProject"].ToString(), jiraID);
             }
         }
 
@@ -225,6 +261,12 @@ namespace CronSynchroJiraAzure
                 var pbi = get.GettingFromAzure();
                 var sql = new UpdateSQL($"UPDATE jiraissue SET issuestatus = 10007 WHERE jiraissue.id= (Select jiraissue.id from jiraissue inner join customfieldvalue cfv on cfv.customfield = 11900 and STRINGVALUE = 'https://dev.azure.com/IRIUMSOFTWARE/_workitems/edit/{pbi.id}' and cfv.ISSUE = jiraissue.id);");
                 sql.UpdateRow();
+
+                //Add last comment
+                sql.query = $"select issue from customfieldvalue where CUSTOMFIELD = 11900 and stringvalue like '%/{pbi.id}';";
+                string jiraID = sql.getJiraID();
+                var addLastComment = new GetAndPostComments();
+                addLastComment.getAndPostLastCommentFromAzureToJira(pbi.id.ToString(), pbi.fields["System.TeamProject"].ToString(), jiraID);
             }
         }
 
@@ -387,6 +429,7 @@ namespace CronSynchroJiraAzure
             post.url = $"https://dev.azure.com/IRIUMSOFTWARE/{entity.azureProject}/_apis/wit/workItems/{azureID}/comments?api-version=7.1-preview.3";
             post.contentType = "application/json";
             post.json = "{\"text\": \" " + comment + " \"}";
+            Console.WriteLine(post.json);
             post.postingToAzure();
         }
 
@@ -420,6 +463,54 @@ namespace CronSynchroJiraAzure
                     patch.patchingToAzure();
                 }
             }
+        }
+
+    }
+
+
+
+    public class MyJobListener : IJobListener
+    {
+        public string Name => "MyJobListener";
+
+        public Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = default)
+        {
+            // This method is called before a job is executed. 
+            // You can put here some code to handle job execution failures.
+            return Task.CompletedTask;
+        }
+
+        public Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
+        {
+            // This method is called if a job execution is vetoed by a trigger listener.
+            return Task.CompletedTask;
+        }
+
+        public Task JobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken = default)
+        {
+            // This method is called after a job has been executed.
+            // If the job has failed, you can put here some code to restart it automatically.
+            if (jobException != null)
+            {
+                // Restart the job
+                var scheduler = context.Scheduler;
+                var jobKey = context.JobDetail.Key;
+                var triggerKey = context.Trigger.Key;
+
+                // Remove the failed job from the scheduler
+                scheduler.DeleteJob(jobKey);
+
+                // Create a new trigger to restart the job after a specified delay
+                var trigger = TriggerBuilder.Create()
+                    .WithIdentity(triggerKey.Name, triggerKey.Group)
+                    .StartAt(DateTimeOffset.UtcNow.AddSeconds(10))
+                    .Build();
+
+                // Schedule the job with the new trigger
+                scheduler.ScheduleJob(context.JobDetail, trigger);
+            }
+
+            return Task.CompletedTask;
         }
     }
 }

@@ -31,3 +31,5 @@ C:\Users\acosentino\source\repos\CronSynchroJiraAzure\bin\Debug\System.Threading
 C:\Users\acosentino\source\repos\CronSynchroJiraAzure\obj\Debug\CronSynchroJiraAzure.csproj.CopyComplete
 C:\Users\acosentino\source\repos\CronSynchroJiraAzure\obj\Debug\CronSynchroJiraAzure.exe
 C:\Users\acosentino\source\repos\CronSynchroJiraAzure\obj\Debug\CronSynchroJiraAzure.pdb
+C:\Users\acosentino\source\repos\CronSynchroJiraAzure\bin\Debug\NLog.dll
+C:\Users\acosentino\source\repos\CronSynchroJiraAzure\bin\Debug\NLog.xml

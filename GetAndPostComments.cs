@@ -11,6 +11,7 @@ namespace CronSynchroJiraAzure
     public class GetAndPostComments
     {
         public List<Comment> listComments;
+
         public GetAndPostComments() { }
 
         public void getAndPostCommentFromSQL(string azureID, string project, string jiraID)
@@ -29,19 +30,15 @@ namespace CronSynchroJiraAzure
             }
         }
 
-        public void getAndPostCommentFromAzure(string azureID, string project, string jiraID)
+        public void getAndPostLastCommentFromAzureToJira(string azureID, string project, string jiraID)
         {
             var get = new GetAzure();
-            get.url = $"https://dev.azure.com/IRIUMSOFTWARE/{project}/_apis/wit/workItems/{azureID}/comments?api-version=7.0-preview.3";
+            get.url = $"https://dev.azure.com/IRIUMSOFTWARE/Locpro/_apis/wit/workItems/{azureID}/comments?api-version=7.0-preview.3";
             var result = get.GettingFromAzure();
-            if (result.comments > 0)
+            if (result.count > 0)
             {
-                foreach (var c in result.comments)
-                {
-                    this.listComments.Add(new Comment(c.text, c.createdBy.uniqueName, c.CreatedDate));
-                    var sql = new UpdateSQL($"insert into jiraaction (id, issueid, author, actionbody, actiontype, created) Select MAX(id)+1, {jiraID}, '{c.uniqueName}', '{c.text}', 'comment', GETDATE() from jiraaction;");
-                    sql.UpdateRow();
-                }
+                var sql = new UpdateSQL($"insert into jiraaction (id, issueid, author, actionbody, actiontype, created) Select MAX(id)+1, {jiraID}, '{result.comments[0].createdBy.uniqueName}', '{result.comments[0].text}', 'comment', GETDATE() from jiraaction;");
+                sql.UpdateRow();
             }
         }
 
