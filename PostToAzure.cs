@@ -37,7 +37,7 @@ namespace CronSynchroJiraAzure
                 else
                 {
                     result = JsonConvert.DeserializeObject<dynamic>(response.Content.ReadAsStringAsync().Result);
-                    Console.WriteLine("Request failed: " + result.StatusCode);
+                    Console.WriteLine("Request failed: " + result);
                 }
                 return result;
             }

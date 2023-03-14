@@ -21,7 +21,9 @@ using System.Security.Cryptography;
 using System.Net;
 using System.Text;
 using NLog;
-
+using NLog.Fluent;
+using System.Web;
+using System.IO;
 
 namespace CronSynchroJiraAzure
 {
@@ -53,13 +55,9 @@ namespace CronSynchroJiraAzure
         {
             NLog.LogManager.Setup().LoadConfiguration(builder => {
                 builder.ForLogger().FilterMinLevel(LogLevel.Info).WriteToConsole();
-                builder.ForLogger().FilterMinLevel(LogLevel.Debug).WriteToFile(fileName: "alexis_test_log.txt");
+                builder.ForLogger().FilterMinLevel(LogLevel.Debug).WriteToFile(fileName: "SyncLogFile.txt");
             });
-            Logger.Info("Mon premier message de journalisation");
-            Logger.Warn("Attention !");
-            Logger.Debug("Should be written in a file !");
-
-            //Testing_SyncAzure_Sprint();
+            Logger.Debug("Ca démarre !");
             //SyncJiraToAzure_Validate();
             //SyncJiraToAzure_Accepted();
             //SyncJira_KO();
@@ -98,10 +96,10 @@ namespace CronSynchroJiraAzure
                     List<string> attachments = sql.getAttachments();
                     try
                     {
-                        patchPBIWithAttachmentFromJira(attachments, ticket.azureProject, result.id.ToString());
+                        patchPBIWithAttachmentFromJira(attachments, ticket.azureProject, result.id.ToString(), result.fields["System.Description"].ToString());
                     } catch (Exception ex)
                     {
-                        Console.WriteLine("Une erreur est survenue : {0}", ex.Message);
+                        Logger.Error("Une erreur est survenue : {0}", ex.Message);
                     }
 
                 } else
@@ -144,11 +142,11 @@ namespace CronSynchroJiraAzure
                     List<string> attachments = sql.getAttachments();
                     try
                     {
-                        patchPBIWithAttachmentFromJira(attachments, ticket.azureProject, result.id.ToString());
+                        patchPBIWithAttachmentFromJira(attachments, ticket.azureProject, result.id.ToString(), result.fields["System.Description"].ToString());
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Une erreur est survenue : {0}", ex.Message);
+                        Logger.Error("Une erreur est survenue : {0}", ex.Message);
                     }
                     //Add link azure link to jira
                     var update = new UpdateSQL($"INSERT INTO customfieldvalue (id, issue, CUSTOMFIELD, stringvalue) SELECT MAX(ID)+1, {ticket.issueNb}, 11900, 'https://dev.azure.com/IRIUMSOFTWARE/_workitems/edit/{result.id}' FROM Jira_Prod.dbo.customfieldvalue;");
@@ -323,7 +321,7 @@ namespace CronSynchroJiraAzure
                 }
                 catch (RuntimeBinderException)
                 {
-                    Console.WriteLine("Error: Property 'value' does not exist in the dynamic object.");
+                    Logger.Error("Error: Property 'value' does not exist in the dynamic object.");
                 }
             }
         }
@@ -401,12 +399,12 @@ namespace CronSynchroJiraAzure
                     }
                     catch (RuntimeBinderException)
                     {
-                        Console.WriteLine("Error: Property 'workItemRelations' does not exist in the dynamic object 'result'.");
+                        Logger.Error("Error: Property 'workItemRelations' does not exist in the dynamic object 'result'.");
                     }
                 }
                 catch (RuntimeBinderException)
                 {
-                    Console.WriteLine("Error: Property 'value' does not exist in the dynamic object.");
+                    Logger.Error("Error: Property 'value' does not exist in the dynamic object.");
                 }
             }
         }
@@ -429,20 +427,20 @@ namespace CronSynchroJiraAzure
             post.url = $"https://dev.azure.com/IRIUMSOFTWARE/{entity.azureProject}/_apis/wit/workItems/{azureID}/comments?api-version=7.1-preview.3";
             post.contentType = "application/json";
             post.json = "{\"text\": \" " + comment + " \"}";
-            Console.WriteLine(post.json);
             post.postingToAzure();
         }
 
-        public void patchPBIWithAttachmentFromJira(List<string> attachments, string project, string azureID)
+        public void patchPBIWithAttachmentFromJira(List<string> attachments, string project, string azureID, string description)
         {
             foreach( var att in attachments)
             {
                 PostAttachment pj = new PostAttachment();
-
                 var azure_link = pj.PostAttachmentToAzureServer(att, project);
+                string filename = azure_link.Split('=').Last();
+                description = description.Replace(filename, $"<img alt='img_url' src='{azure_link}' >");
                 var patchAtt = new PatchToAzure();
                 patchAtt.url = $"https://dev.azure.com/IRIUMSOFTWARE/{project}/_apis/wit/workitems/{azureID}?api-version=7.0";
-                patchAtt.json = "[{\"op\": \"add\", \"path\": \"/relations/-\", \"value\": { \"rel\": \"AttachedFile\", \"url\": \"" + azure_link + "\", \"attributes\": {\"comment\": \"Spec for the work\"}}}]";
+                patchAtt.json = "[{\"op\": \"add\", \"path\": \"/relations/-\", \"value\": { \"rel\": \"AttachedFile\", \"url\": \"" + azure_link + "\", \"attributes\": {\"comment\": \"Spec for the work\"}}}, {\"op\": \"add\", \"path\": \"/fields/System.Description\", \"value\": \"" + description + "\" } ]";
                 patchAtt.patchingToAzure();
             }
         }
