@@ -5,16 +5,20 @@ VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CronSynchroJiraAzure", "CronSynchroJiraAzure.csproj", "{0E454AF4-457B-4F41-A322-25F8D14D99CC}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "CRON SyncJiraAzure", "..\CRON SyncJiraAzure\CRON SyncJiraAzure.vdproj", "{9A106AC5-663C-4BA3-925A-4EEB49A90BB7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0E454AF4-457B-4F41-A322-25F8D14D99CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0E454AF4-457B-4F41-A322-25F8D14D99CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E454AF4-457B-4F41-A322-25F8D14D99CC}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{0E454AF4-457B-4F41-A322-25F8D14D99CC}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{0E454AF4-457B-4F41-A322-25F8D14D99CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0E454AF4-457B-4F41-A322-25F8D14D99CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A106AC5-663C-4BA3-925A-4EEB49A90BB7}.Debug|Any CPU.ActiveCfg = Release
+		{9A106AC5-663C-4BA3-925A-4EEB49A90BB7}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

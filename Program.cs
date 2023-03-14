@@ -58,16 +58,15 @@ namespace CronSynchroJiraAzure
                 builder.ForLogger().FilterMinLevel(LogLevel.Debug).WriteToFile(fileName: "SyncLogFile.txt");
             });
             Logger.Debug("Ca démarre !");
-            //SyncJiraToAzure_Validate();
-            //SyncJiraToAzure_Accepted();
-            //SyncJira_KO();
-            //SyncAzure_Done();
-            //SyncAzure_Removed();
-            //SyncAzure_Sprint();
-            //SyncAzure_ClosedSprint();
+            SyncJiraToAzure_Validate();
+            SyncJiraToAzure_Accepted();
+            SyncJira_KO();
+            SyncAzure_Done();
+            SyncAzure_Removed();
+            SyncAzure_Sprint();
+            SyncAzure_ClosedSprint();
             return Task.CompletedTask;
         }
-
 
         //TESTED AND WORKS JUST FINE
         public void SyncJiraToAzure_Validate()
