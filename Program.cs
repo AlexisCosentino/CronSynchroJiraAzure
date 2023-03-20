@@ -57,24 +57,16 @@ namespace CronSynchroJiraAzure
                 builder.ForLogger().FilterMinLevel(LogLevel.Debug).WriteToFile(fileName: "SyncLogFile.txt");
             });
             Globals.Logger.Debug("Ca démarre !");
-            test();
-            //SyncJiraToAzure_Validate();
-            //SyncJiraToAzure_Accepted();
-            //SyncJira_KO();
-            //SyncAzure_Done();
-            //SyncAzure_Removed();
-            //SyncAzure_Sprint();
-            //SyncAzure_ClosedSprint();
+            SyncJiraToAzure_Validate();
+            SyncJiraToAzure_Accepted();
+            SyncJira_KO();
+            SyncAzure_Done();
+            SyncAzure_Removed();
+            SyncAzure_Sprint();
+            SyncAzure_ClosedSprint();
             return Task.CompletedTask;
         }
 
-        public void test()
-        {
-            var post = new PostToAzure();
-            post.url = "https://dev.azure.com/IRIUMSOFTWARE/locpro/_apis/wit/workitems/$bug?bypassRules=true&api-version=6.0";
-            post.json = "blabla";
-            post.postingToAzure();
-        }
 
         //TESTED AND WORKS JUST FINE
         public void SyncJiraToAzure_Validate()

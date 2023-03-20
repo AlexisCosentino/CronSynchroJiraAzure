@@ -57,6 +57,7 @@ namespace CronSynchroJiraAzure
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.ToString());
+                    Globals.Logger.Error(ex.ToString());
                 }
                 finally
                 {
@@ -66,6 +67,7 @@ namespace CronSynchroJiraAzure
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
+                Globals.Logger.Error(ex.ToString());
             }
             finally
             {
