@@ -95,6 +95,7 @@
     <Compile Include="Comment.cs" />
     <Compile Include="GetAndPostComments.cs" />
     <Compile Include="GetAzure.cs" />
+    <Compile Include="Globals.cs" />
     <Compile Include="PatchToAzure.cs" />
     <Compile Include="PostAttachment.cs" />
     <Compile Include="UpdateSQL.cs" />

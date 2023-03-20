@@ -32,8 +32,6 @@ namespace CronSynchroJiraAzure
                 SqlCommand command = new SqlCommand(this.query, conn);
 
                 conn.Open();
-                Console.WriteLine("We are in bro");
-
                 SqlDataReader reader = command.ExecuteReader();
 
                 try
@@ -85,6 +83,8 @@ namespace CronSynchroJiraAzure
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.ToString());
+                    Globals.Logger.Error(ex.ToString());
+
                 }
                 finally
                 {
@@ -95,6 +95,7 @@ namespace CronSynchroJiraAzure
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
+                Globals.Logger.Error(ex.ToString());
             }
             finally
             {
@@ -124,6 +125,8 @@ namespace CronSynchroJiraAzure
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.ToString());
+                    Globals.Logger.Error(ex.ToString());
+
                 }
                 finally
                 {
@@ -133,6 +136,7 @@ namespace CronSynchroJiraAzure
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
+                Globals.Logger.Error(ex.ToString());
             }
             finally
             {
@@ -166,6 +170,7 @@ namespace CronSynchroJiraAzure
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.ToString());
+                    Globals.Logger.Error(ex.ToString());
                 }
                 finally
                 {
@@ -175,6 +180,7 @@ namespace CronSynchroJiraAzure
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
+                Globals.Logger.Error(ex.ToString());
             }
             finally
             {
@@ -216,6 +222,7 @@ namespace CronSynchroJiraAzure
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.ToString());
+                    Globals.Logger.Error(ex.ToString());
                 }
                 finally
                 {
@@ -225,6 +232,7 @@ namespace CronSynchroJiraAzure
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
+                Globals.Logger.Error(ex.ToString());
             }
             finally
             {
@@ -255,6 +263,7 @@ namespace CronSynchroJiraAzure
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.ToString());
+                    Globals.Logger.Error(ex.ToString());
                 }
                 finally
                 {
@@ -264,6 +273,7 @@ namespace CronSynchroJiraAzure
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
+                Globals.Logger.Error(ex.ToString());
             }
             finally
             {
@@ -294,6 +304,7 @@ namespace CronSynchroJiraAzure
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.ToString());
+                    Globals.Logger.Error(ex.ToString());
                 }
                 finally
                 {
@@ -303,6 +314,7 @@ namespace CronSynchroJiraAzure
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
+                Globals.Logger.Error(ex.ToString());
             }
             finally
             {
