@@ -43,9 +43,10 @@
           
 # Le code
 
+* Pour que l'app fonctionne, vous devez absolument avoir un fichier json contenant les mots de passe et login nécessaires, dans le dossier bin/DEBUG/, merci de me demander si vous en avez besoin.
+
 Le coeur du programme se retrouve dans la page Program.cs
 Le main appel un job qui est un Cron, qui est lancé actuellement toutes les minutes.
-**Pour le moment le cron est configuré chaque minutes mais peut évidemment être modifié à notre guise, ne pas oublier de modifier chaque query sql également**
 
 **Comment savoir si un ticket Jira existe sur Azure et si un ticket Azure existe dans Jira ??**
 * Sur Jira, un champs AzureLink existe et doit etre remplis pour qu'il existe.
@@ -145,6 +146,27 @@ Cette fonction sert à automatiser une/des actions sur une tache lors d'une clot
         * Je get la hierarchie du pbi closed et le patch sur le nouveau
         * Je get les commentaires et les post sur le nouveau
 
-# Informations
-* Ajout de PJ Azure -> Jira PAS FAIT, ne sait pas comment faire du tout.
-* Pour que l'app fonctionne, vous devez absolument avoir un fichier json contenant les mots de passe et login nécessaires, dans le dossier bin/DEBUG/, merci de me demander si vous en avez besoin.
+# Le déploiement
+
+Le programme a été généré en exe/msi via visual studio. Il est installé et déployé sur notre serveur. 
+Si il faut le réinstaller, voici la procèdure :
+* Bien vérifier que le programme soit bien désinstallé sur le serveur en regardant dans application/fonctionnalités de windows.
+* Ensuite installer le .msi
+* ajouter dans 'c:\Program File (x86)\Irium Software\Cron SyncJiraAzure', le script powershell script-automate-restart.ps1
+* Faire en sorte que le script powershell soit executer toutes les heure par le serveur, via une tâche planifié :
+    * windows + r, tapez taskschd.msc
+    * Creer une tâche
+    * Lui donner un nom et description, cocher "Exécuter avec les autorisations maximales"
+    * Déclencheur : Une fois et répéter la tache toutes les heures indéfiniment
+    * Actions :
+        * Démarrer un programme
+        * Programme/script : C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+        * Ajouter des arguments : -ExecutionPolicy Bypass -File "C:\Program Files (x86)\Irium Software\CRON SyncJiraAzure\script-automate-restart.ps1"
+        * Commencer dans : C:\Program Files (x86)\Irium Software\CRON SyncJiraAzure
+
+**TERMINE**
+
+
+Lorsque le cron tourne, dans son dossier, vous trouverez un fichier de log nommé SyncLogFile.txt
+
+Il y a également un deuxième fichier de logs créé par le script powershell qui annonce chaque heure si le programme tourne ou si il a été redémarrer, il se nomme program-restart-log.txt
