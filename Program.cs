@@ -87,8 +87,11 @@ namespace CronSynchroJiraAzure
                     posting.url = $"https://dev.azure.com/IRIUMSOFTWARE/{ticket.azureProject}/_apis/wit/workitems/${ticket.issueType}?bypassRules=true&api-version=6.0";
                     posting.json = jsonBody;
                     var result = posting.postingToAzure();
+                    Globals.Logger.Debug($"------- INFO : Le ticket Azure N°{result.id}, a été créé avec le statut 'New' + 'To estimate' -------");
                     var update = new UpdateSQL($"INSERT INTO customfieldvalue (id, issue, CUSTOMFIELD, stringvalue) SELECT MAX(ID)+1, {ticket.issueNb}, 11900, 'https://dev.azure.com/IRIUMSOFTWARE/_workitems/edit/{result.id}' FROM Jira_Prod.dbo.customfieldvalue;");
                     update.UpdateRow();
+                    Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{ticket.linkToJira}, a été modifié pour ajouter le lien azure.");
+
 
                     //Send attachment to Azure
                     sql = new GetSQL($"SELECT id ,mimetype, filename FROM fileattachment Where issueid = {ticket.issueNb};");
@@ -96,7 +99,8 @@ namespace CronSynchroJiraAzure
                     try
                     {
                         patchPBIWithAttachmentFromJira(attachments, ticket.azureProject, result.id.ToString(), result.fields["System.Description"].ToString());
-                    } catch (Exception ex)
+                    }
+                    catch (Exception ex)
                     {
                         Globals.Logger.Error("Une erreur est survenue : {0}", ex.Message);
                     }
@@ -109,6 +113,7 @@ namespace CronSynchroJiraAzure
                     patch.json = "[{\"op\": \"add\", \"path\": \"/fields/System.State\", \"value\": \"New\" }, {\"op\": \"add\", \"path\": \"/fields/Custom.Toestimate\", \"value\": \"true\" }]";
                     patch.url = $"https://dev.azure.com/IRIUMSOFTWARE/_apis/wit/workitems/{azureID}?api-version=7.0";
                     patch.patchingToAzure();
+                    Globals.Logger.Debug($"------- INFO : Le ticket Azure N°{azureID}, statut modifié vers 'New' + 'To estimate' -------");
                 }
             }
         }
@@ -133,6 +138,7 @@ namespace CronSynchroJiraAzure
                     posting.url = $"https://dev.azure.com/IRIUMSOFTWARE/{ticket.azureProject}/_apis/wit/workitems/${ticket.issueType}?bypassRules=true&api-version=6.0";
                     posting.json = jsonBody;
                     var result = posting.postingToAzure();
+                    Globals.Logger.Debug($"------- INFO : Le ticket Azure N°{result.id}, a été créé avec le statut 'New' + ajout du dernier com -------");
                     // Post last comment
                     GetLastCommentAndPostToAzure(ticket, result.id.ToString());
 
@@ -150,6 +156,8 @@ namespace CronSynchroJiraAzure
                     //Add link azure link to jira
                     var update = new UpdateSQL($"INSERT INTO customfieldvalue (id, issue, CUSTOMFIELD, stringvalue) SELECT MAX(ID)+1, {ticket.issueNb}, 11900, 'https://dev.azure.com/IRIUMSOFTWARE/_workitems/edit/{result.id}' FROM Jira_Prod.dbo.customfieldvalue;");
                     update.UpdateRow();
+                    Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{ticket.linkToJira}, a été modifié pour ajouter le lien azure.");
+
                 }
                 else
                 {
@@ -159,6 +167,7 @@ namespace CronSynchroJiraAzure
                     patch.json = "[{\"op\": \"add\", \"path\": \"/fields/System.State\", \"value\": \"New\" }]";
                     patch.url = $"https://dev.azure.com/IRIUMSOFTWARE/_apis/wit/workitems/{azureID}?api-version=7.0";
                     patch.patchingToAzure();
+                    Globals.Logger.Debug($"------- INFO : Le ticket Azure N°{azureID}, a été patché avec le statut 'New' + ajout du dernier com -------");
                     GetLastCommentAndPostToAzure(ticket, azureID);
                 }
             }
@@ -179,7 +188,6 @@ namespace CronSynchroJiraAzure
                 int nbOFDays = sql.getNbDaysKO();
                 if ( nbOFDays <= 15)
                 {
-                    //VERIFIER AVEC RENAUD SI TICKET SERA TOUJOURS TOUJOURS DEJA PRESENT DANS AZURE OU PAS ?????
                     //Si inférieur ou égal à 15 jours, je modifie le ticket au status BACK
                     if (!String.IsNullOrEmpty(ticket.azureLink))
                     {
@@ -188,6 +196,7 @@ namespace CronSynchroJiraAzure
                         patch.json = "[{\"op\": \"add\", \"path\": \"/fields/System.State\", \"value\": \"Back - Test Failed\" }]";
                         patch.url = $"https://dev.azure.com/IRIUMSOFTWARE/_apis/wit/workitems/{azureID}?api-version=7.0";
                         patch.patchingToAzure();
+                        Globals.Logger.Debug($"------- INFO : Le ticket AZURE N°{azureID}, a été patché pour modifier sont statut vers 'Back - test failed' + dernier com");
                         GetLastCommentAndPostToAzure(ticket, azureID);
                     }
                 } else
@@ -195,6 +204,7 @@ namespace CronSynchroJiraAzure
                     //Si supérieur à 15jours, je passe le ticket Jira à  Demande KO
                     var update = new UpdateSQL($"UPDATE jiraissue SET issuestatus = 11900 WHERE jiraissue.id={ticket.issueNb}");
                     update.UpdateRow();
+                    Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{ticket.linkToJira}, a été updated pour modifier sont statut vers 'Demande KO'");
                 }
             }
         }
@@ -216,9 +226,12 @@ namespace CronSynchroJiraAzure
                 var sql = new UpdateSQL($"UPDATE jiraissue SET issuestatus = 10001 WHERE jiraissue.id= (Select jiraissue.id from jiraissue inner join customfieldvalue cfv on cfv.customfield = 11900 and STRINGVALUE = 'https://dev.azure.com/IRIUMSOFTWARE/_workitems/edit/{pbi.id}' and cfv.ISSUE = jiraissue.id);");
                 sql.UpdateRow();
 
+
                 //Add last comment
                 sql.query = $"select issue from customfieldvalue where CUSTOMFIELD = 11900 and stringvalue like '%/{pbi.id.ToString()}';";
                 string jiraID = sql.getJiraID();
+                Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{jiraID}, a été patché pour modifier sont statut vers 'A compléter' + dernier com");
+
                 var addLastComment = new GetAndPostComments();
                 addLastComment.getAndPostLastCommentFromAzureToJira(pbi.id.ToString(), pbi.fields["System.TeamProject"].ToString(), jiraID);
             }
@@ -237,6 +250,7 @@ namespace CronSynchroJiraAzure
                 //Add last comment
                 sql.query = $"select issue from customfieldvalue where CUSTOMFIELD = 11900 and stringvalue like '%/{pbi.id.ToString()}';";
                 string jiraID = sql.getJiraID();
+                Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{jiraID}, a été patché pour modifier sont statut vers 'A tester' + dernier com");
                 var addLastComment = new GetAndPostComments();
                 addLastComment.getAndPostLastCommentFromAzureToJira(pbi.id.ToString(), pbi.fields["System.TeamProject"].ToString(), jiraID);
             }
@@ -262,6 +276,7 @@ namespace CronSynchroJiraAzure
                 //Add last comment
                 sql.query = $"select issue from customfieldvalue where CUSTOMFIELD = 11900 and stringvalue like '%/{pbi.id}';";
                 string jiraID = sql.getJiraID();
+                Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{jiraID}, a été updated pour modifier sont statut vers 'Rejeté' + dernier com");
                 var addLastComment = new GetAndPostComments();
                 addLastComment.getAndPostLastCommentFromAzureToJira(pbi.id.ToString(), pbi.fields["System.TeamProject"].ToString(), jiraID);
             }
@@ -305,6 +320,7 @@ namespace CronSynchroJiraAzure
                                 {
                                     var update = new UpdateSQL($"UPDATE customfieldvalue SET DATEVALUE = '{DateTime.ParseExact(startDate, "MM/dd/yyyy HH:mm:ss", CultureInfo.InvariantCulture)}' WHERE ISSUE = {result[0]} AND CUSTOMFIELD = 10303");
                                     update.UpdateRow();
+                                    Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{result[0]}, a été updated pour modifier sa date de début.");
                                 }
                             }
                             if (String.IsNullOrEmpty(result[2]) || DateTime.ParseExact(finishDate, "MM/dd/yyyy HH:mm:ss", CultureInfo.InvariantCulture) != DateTime.ParseExact(result[2], "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture))
@@ -313,6 +329,8 @@ namespace CronSynchroJiraAzure
                                 {
                                     var update = new UpdateSQL($"UPDATE customfieldvalue SET DATEVALUE = '{DateTime.ParseExact(finishDate, "MM/dd/yyyy HH:mm:ss", CultureInfo.InvariantCulture)}' WHERE ISSUE = {result[0]} AND CUSTOMFIELD = 10304");
                                     update.UpdateRow();
+                                    Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{result[0]}, a été updated pour modifier sa date de fin.");
+
                                 }
                             }
                         }
