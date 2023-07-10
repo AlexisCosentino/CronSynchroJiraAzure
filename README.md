@@ -153,7 +153,7 @@ Si il faut le réinstaller, voici la procèdure :
 * Bien vérifier que le programme soit bien désinstallé sur le serveur en regardant dans application/fonctionnalités de windows.
 * Ensuite installer le .msi
 * ajouter dans 'c:\Program File (x86)\Irium Software\Cron SyncJiraAzure', le script powershell script-automate-restart.ps1
-* Faire en sorte que le script powershell soit executer toutes les heure par le serveur, via une tâche planifié :
+* Faire en sorte que le script powershell soit executé toutes les heure par le serveur, via une tâche planifié :
     * windows + r, tapez taskschd.msc
     * Creer une tâche
     * Lui donner un nom et description, cocher "Exécuter avec les autorisations maximales"
@@ -169,4 +169,4 @@ Si il faut le réinstaller, voici la procèdure :
 
 Lorsque le cron tourne, dans son dossier, vous trouverez un fichier de log nommé SyncLogFile.txt
 
-Il y a également un deuxième fichier de logs créé par le script powershell qui annonce chaque heure si le programme tourne ou si il a été redémarrer, il se nomme program-restart-log.txt
+Il y a également un deuxième fichier de logs créé par le script powershell qui annonce chaque heure si le programme tourne ou si il a été redémarré, il se nomme program-restart-log.txt

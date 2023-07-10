@@ -363,5 +363,85 @@ namespace CronSynchroJiraAzure
             return input;
         }
 
+        public string getSequenceID()
+        {
+            get_credentials();
+            string seqID = "";
+            SqlConnection conn = new SqlConnection($"Server={hostname};Database={dbname};User Id={username};Password={password};");
+            try
+            {
+                SqlCommand command = new SqlCommand(this.query, conn);
+                conn.Open();
+                SqlDataReader reader = command.ExecuteReader();
+
+                try
+                {
+                    while (reader.Read())
+                    {
+                        seqID = reader[1].ToString();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                    Globals.Logger.Error(ex.ToString());
+                }
+                finally
+                {
+                    reader.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                Globals.Logger.Error(ex.ToString());
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return seqID;
+        }
+
+        public string getMaxID()
+        {
+            get_credentials();
+            string seqID = "";
+            SqlConnection conn = new SqlConnection($"Server={hostname};Database={dbname};User Id={username};Password={password};");
+            try
+            {
+                SqlCommand command = new SqlCommand(this.query, conn);
+                conn.Open();
+                SqlDataReader reader = command.ExecuteReader();
+
+                try
+                {
+                    while (reader.Read())
+                    {
+                        seqID = reader[0].ToString();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                    Globals.Logger.Error(ex.ToString());
+                }
+                finally
+                {
+                    reader.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                Globals.Logger.Error(ex.ToString());
+            }
+            finally
+            {
+                conn.Close();
+            }
+            return seqID;
+        }
+
     }
 }

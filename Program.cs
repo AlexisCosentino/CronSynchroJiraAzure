@@ -57,13 +57,14 @@ namespace CronSynchroJiraAzure
                 builder.ForLogger().FilterMinLevel(LogLevel.Debug).WriteToFile(fileName: "SyncLogFile.txt");
             });
             Globals.Logger.Debug("Ca démarre !");
-            SyncJiraToAzure_Validate();
-            SyncJiraToAzure_Accepted();
-            SyncJira_KO();
-            SyncAzure_Done();
-            SyncAzure_Removed();
-            SyncAzure_Sprint();
-            SyncAzure_ClosedSprint();
+            checkSequenceValueitemBeforeUpdate();
+            //SyncJiraToAzure_Validate();
+            //SyncJiraToAzure_Accepted();
+            //SyncJira_KO();
+            //SyncAzure_Done();
+            //SyncAzure_Removed();
+            //SyncAzure_Sprint();
+            //SyncAzure_ClosedSprint();
             return Task.CompletedTask;
         }
 
@@ -88,6 +89,7 @@ namespace CronSynchroJiraAzure
                     posting.json = jsonBody;
                     var result = posting.postingToAzure();
                     Globals.Logger.Debug($"------- INFO : Le ticket Azure N°{result.id}, a été créé avec le statut 'New' + 'To estimate' -------");
+                    checkSequenceValueitemBeforeUpdate();
                     var update = new UpdateSQL($"INSERT INTO customfieldvalue (id, issue, CUSTOMFIELD, stringvalue) SELECT MAX(ID)+1, {ticket.issueNb}, 11900, 'https://dev.azure.com/IRIUMSOFTWARE/_workitems/edit/{result.id}' FROM Jira_Prod.dbo.customfieldvalue;");
                     update.UpdateRow();
                     Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{ticket.linkToJira}, a été modifié pour ajouter le lien azure.");
@@ -154,6 +156,7 @@ namespace CronSynchroJiraAzure
                         Globals.Logger.Error("Une erreur est survenue : {0}", ex.Message);
                     }
                     //Add link azure link to jira
+                    checkSequenceValueitemBeforeUpdate();
                     var update = new UpdateSQL($"INSERT INTO customfieldvalue (id, issue, CUSTOMFIELD, stringvalue) SELECT MAX(ID)+1, {ticket.issueNb}, 11900, 'https://dev.azure.com/IRIUMSOFTWARE/_workitems/edit/{result.id}' FROM Jira_Prod.dbo.customfieldvalue;");
                     update.UpdateRow();
                     Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{ticket.linkToJira}, a été modifié pour ajouter le lien azure.");
@@ -318,6 +321,7 @@ namespace CronSynchroJiraAzure
                             {
                                 if (!String.IsNullOrEmpty(result[1]))
                                 {
+                                    checkSequenceValueitemBeforeUpdate();
                                     var update = new UpdateSQL($"UPDATE customfieldvalue SET DATEVALUE = '{DateTime.ParseExact(startDate, "MM/dd/yyyy HH:mm:ss", CultureInfo.InvariantCulture)}' WHERE ISSUE = {result[0]} AND CUSTOMFIELD = 10303");
                                     update.UpdateRow();
                                     Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{result[0]}, a été updated pour modifier sa date de début.");
@@ -327,6 +331,7 @@ namespace CronSynchroJiraAzure
                             {
                                 if (!String.IsNullOrEmpty(result[2]))
                                 {
+                                    checkSequenceValueitemBeforeUpdate();
                                     var update = new UpdateSQL($"UPDATE customfieldvalue SET DATEVALUE = '{DateTime.ParseExact(finishDate, "MM/dd/yyyy HH:mm:ss", CultureInfo.InvariantCulture)}' WHERE ISSUE = {result[0]} AND CUSTOMFIELD = 10304");
                                     update.UpdateRow();
                                     Globals.Logger.Debug($"------- INFO : Le ticket JIRA N°{result[0]}, a été updated pour modifier sa date de fin.");
@@ -426,6 +431,12 @@ namespace CronSynchroJiraAzure
             }
         }
 
+        public void testJiraAPI()
+        {
+            JiraAPI test = new JiraAPI();
+            test.sendToJiraByAPI();
+        }
+
 
 
         public void GetLastCommentAndPostToAzure(JiraEntity entity, string azureID)
@@ -480,6 +491,21 @@ namespace CronSynchroJiraAzure
             }
         }
 
+        public void checkSequenceValueitemBeforeUpdate()
+        {
+            var get = new GetSQL("select * from SEQUENCE_VALUE_ITEM where SEQ_NAME = 'CustomFieldValue';");
+            int seqID = int.Parse(get.getSequenceID());
+
+            get.query = "select max(id) from customfieldvalue;";
+            int maxID = int.Parse(get.getMaxID());
+            Console.WriteLine($"max id = {maxID} et seqID = {seqID} .");
+            if (maxID >= seqID) 
+            {
+                Globals.Logger.Debug($"------- INFO : UPDATE SEQUENCE, maxID = {maxID} & seqID = {seqID} ");
+                var update = new UpdateSQL("UPDATE SEQUENCE_VALUE_ITEM SET SEQ_ID = (select SEQ_ID from SEQUENCE_VALUE_ITEM where SEQ_NAME = 'CustomFieldValue') + 100 where SEQ_NAME = 'CustomFieldValue';");
+                update.UpdateRow();
+            }
+        }
     }
 
 

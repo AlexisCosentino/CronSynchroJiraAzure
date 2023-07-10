@@ -92,6 +92,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="JiraAPI.cs" />
     <Compile Include="Comment.cs" />
     <Compile Include="GetAndPostComments.cs" />
     <Compile Include="GetAzure.cs" />
